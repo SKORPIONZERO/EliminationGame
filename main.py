@@ -6,6 +6,7 @@
 # Version number 0.0.1
 
 import random
+import time
 
 TILE = "[X]"
 NO_TILE = "[ ]"
@@ -34,7 +35,10 @@ def GetRandomTile(difficulty):
 
 def DisplayState(PlayerNumber):
     print("-------------------------")
-    print(f"Player {PlayerNumber}'s turn")
+    if PlayerNumber == -1:
+        print(f"Computer's turn")
+    else:
+        print(f"Player {PlayerNumber}'s turn")
     print()
     DisplayBoard()
 
@@ -201,11 +205,12 @@ def SetBoardSize():
         Width = 4
         Height = 4
 
-def DisplayMenu(RandomOption):
+def DisplayMenu(RandomOption, GameMode):
     print("1 - Start game")
     print(f"2 - Set board size (currently {Width} x {Height})")
     print(f"3 - Toggle random option (currently {RandomOption})")
     print("4 - Load test board (4 x 4)")
+    print(f"5 - Change game mode (currently {GameMode})")
     print("9 - Quit")
 
 def LoadTestBoard():
@@ -230,37 +235,65 @@ def CheckGameOver():
     else:
         return False
 
-def PlayGame():
+def PlayGame(GameMode):
     print(f"Valid moves are within the range A1-{ConvertCoordsToRef(Height - 1, Width - 1)}")
     GameOver = False
     try:
-        NextPlayer = int(input("Enter which player is going first: "))
+        if GameMode == "Multi Player":
+            NextPlayer = int(input("Enter which player is going first: "))
+        else:
+            NextPlayer = random.choice([1,-1])
         while not GameOver:
             DisplayState(NextPlayer)
             print()
             IsValid = ""
             while IsValid != "Correct move":
-                Move = input("Enter move: ")
-                IsValid = ProcessMove(Move)
-                match IsValid:
-                    case "Empty string":
-                        print("\033[31mThe entered string is empty!\033[0m")
-                    case "Incorrect format":
-                        print("\033[31mThe move must be entered in the form, similar to A1-D1!\033[0m")
-                    case "Double row":
-                        print("\033[31mThe player can only make a move across a single straight line!\033[0m")
-                    case "Empty tile on the way":
-                        print("\033[31mThere are empty tiles on the way!\033[0m")
-                    case "Not enough tiles":
-                        print("\033[31mCannot make a move that removes all tiles left from the board!\033[0m")
-                    case "Correct move":
-                        pass
-                    case _:
-                        pass
-            NextPlayer = NextPlayer % 2 + 1
+                if NextPlayer > 0:
+                    Move = input("Enter move: ")
+                    IsValid = ProcessMove(Move)
+                    match IsValid:
+                        case "Empty string":
+                            print("\033[31mThe entered string is empty!\033[0m")
+                        case "Incorrect format":
+                            print("\033[31mThe move must be entered in the form, similar to A1-D1!\033[0m")
+                        case "Double row":
+                            print("\033[31mThe player can only make a move across a single straight line!\033[0m")
+                        case "Empty tile on the way":
+                            print("\033[31mThere are empty tiles on the way!\033[0m")
+                        case "Not enough tiles":
+                            print("\033[31mCannot make a move that removes all tiles left from the board!\033[0m")
+                        case "Correct move":
+                            pass
+                        case _:
+                            pass
+                else:
+                    randomiser = random.uniform(1,10)
+                    if randomiser < 5:
+                        Move = random.choice(SearchForLongestMoves())
+                    else:
+                        Move = random.choice(SearchForAllowedMoves()[0])
+                    MiddleIndex = Move.index("-")
+                    if Move[:MiddleIndex] == Move[MiddleIndex+1:]:
+                        Move = Move[:MiddleIndex]
+                    IsValid = ProcessMove(Move)
+                    time.sleep(1)
+                    print(f"The computer made move: {Move}")
+            if GameMode == "Multi Player":
+                NextPlayer = NextPlayer % 2 + 1
+            else:
+                if NextPlayer == 1:
+                    NextPlayer = -1
+                else:
+                    NextPlayer = 1
             if CheckGameOver():
                 GameOver = True
-                print(f"\033[32mGame over - player {NextPlayer % 2 + 1} wins\033[0m")
+                if GameMode == "Multi Player":
+                    print(f"\033[32mGame over - player {NextPlayer % 2 + 1} wins\033[0m")
+                else:
+                    if NextPlayer == 1:
+                        print(f"\033[31mGame over - computer wins\033[0m")
+                    else:
+                        print(f"\033[32mGame over - player wins\033[0m")
                 print()
                 DisplayBoard()
                 print()
@@ -269,32 +302,37 @@ def PlayGame():
     except ValueError:
         print("\033[31mCan only enter 1 or 2 for player order!\033[0m")
 
+def SelectDifficulty(RandomOption):
+    difficulty = ""
+    if RandomOption == True:
+        while difficulty not in ["low", "mid", "high"]:
+            difficulty = input("Select difficulty of the game(\033[32mlow\033[0m, \033[33mmid\033[0m, \033[31mhigh\033[0m): ")
+    match difficulty:
+        case "low":
+            difficulty = 1
+        case "mid":
+            difficulty = 2
+        case "high":
+            difficulty = 3
+        case _:
+            print("Difficulty is set to 0")
+            difficulty = 0
+    return difficulty
+
 def Main():
     Playing = True
     RandomOption = False
+    GameMode = "Multi Player"
     while Playing:
         ExitMenu = False
         while not ExitMenu:
             print()
-            DisplayMenu(RandomOption)
+            DisplayMenu(RandomOption, GameMode)
             try:
                 UserInput = int(input("Enter a choice: "))
                 if UserInput == 1:
                     ExitMenu = True
-                    difficulty = ""
-                    if RandomOption == True:
-                        while difficulty not in ["low", "mid", "high"]:
-                            difficulty = input("Select difficulty of the game(\033[32mlow\033[0m, \033[33mmid\033[0m, \033[31mhigh\033[0m): ")
-                    match difficulty:
-                        case "low":
-                            difficulty = 1
-                        case "mid":
-                            difficulty = 2
-                        case "high":
-                            difficulty = 3
-                        case _:
-                            print("Difficulty is set to 0")
-                            difficulty = 0
+                    difficulty = SelectDifficulty(RandomOption)
                     ResetBoard(RandomOption, difficulty)
                 elif UserInput == 2:
                     SetBoardSize()
@@ -303,6 +341,11 @@ def Main():
                 elif UserInput == 4:
                     ExitMenu = True
                     LoadTestBoard()
+                elif UserInput == 5:
+                    if GameMode == "Multi Player":
+                        GameMode = "Single Player"
+                    else:
+                        GameMode = "Multi Player"
                 elif UserInput == 9:
                     print("Thank you for playing")
                     ExitMenu = True
@@ -310,7 +353,7 @@ def Main():
             except ValueError:
                 print("\033[31mOnly integers are allowed to be entered!\033[0m")
         if Playing:
-            PlayGame()
+            PlayGame(GameMode)
     print("Press enter to continue")
     input()
 
