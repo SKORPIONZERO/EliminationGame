@@ -14,6 +14,10 @@ NO_TILE = "[ ]"
 Width = 4
 Height = 4
 Board = []
+Player1Wins = 0
+Player2Wins = 0
+ComputerWins = 0
+PlayerAgainstComputerWins = 0
 
 def ResetBoard(RandomOption, difficulty = 1):
     global Board
@@ -212,6 +216,11 @@ def DisplayMenu(RandomOption, GameMode):
     print("4 - Load test board (4 x 4)")
     print(f"5 - Change game mode (currently {GameMode})")
     print("9 - Quit")
+    match GameMode:
+        case "Multi Player":
+            print(f"Current score (Player 1 : Player 2) = {Player1Wins}:{Player2Wins}")
+        case "Single Player":
+            print(f"Current score (Player : Computer) = {PlayerAgainstComputerWins}:{ComputerWins}")
 
 def LoadTestBoard():
     global Width
@@ -289,11 +298,17 @@ def PlayGame(GameMode):
                 GameOver = True
                 if GameMode == "Multi Player":
                     print(f"\033[32mGame over - player {NextPlayer % 2 + 1} wins\033[0m")
+                    if (NextPlayer % 2 + 1) == 1:
+                        Player1Wins += 1
+                    elif (NextPlayer % 2 + 1) == 2:
+                        Player2Wins
                 else:
                     if NextPlayer == 1:
                         print(f"\033[31mGame over - computer wins\033[0m")
+                        ComputerWins += 1
                     else:
                         print(f"\033[32mGame over - player wins\033[0m")
+                        PlayerAgainstComputerWins += 1
                 print()
                 DisplayBoard()
                 print()
@@ -340,6 +355,8 @@ def Main():
                     RandomOption = not RandomOption
                 elif UserInput == 4:
                     ExitMenu = True
+                    GameMode == "Multi Player"
+                    print("Game mode is changed to Multi Player")
                     LoadTestBoard()
                 elif UserInput == 5:
                     if GameMode == "Multi Player":
