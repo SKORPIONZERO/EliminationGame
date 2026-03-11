@@ -141,7 +141,8 @@ def ProcessHint(Move):
 
 def ProcessUndo(Move):
     if Move == "U":
-        print(f"Undo")
+        if Last2MovesHistory[0] == "Letter Move":
+            print(f"\033[31mCannot undo a single letter move\033[0m")
         # ======================================================================================================
         return True
 
@@ -209,7 +210,7 @@ def ProcessMove(Move):
                 return "Empty tile on the way"
         return "Correct move"
     except IndexError:
-        return "Empty string"
+        return "Outside Index"
     except ValueError:
         return "Incorrect format"
 
@@ -305,8 +306,21 @@ def ProcessComputerMove():
     print(f"The computer made move: {Move}")
     return IsValid
 
+def ClearMoveHistory():
+    if len(Last2MovesHistory) > 1:
+        Last2MovesHistory.pop(0)
+
+def LogMove(Move):
+    ClearMoveHistory()
+    if len(Move) == 1:
+        Last2MovesHistory.append("Letter Move")
+    else:
+        if Move[:(len(Move)//2)]== Move[(len(Move)//2+1):]:
+            Move = Move[:(len(Move)//2)]
+        Last2MovesHistory.append(Move)
+
 def PlayGame(GameMode):
-    global Player1Wins, Player2Wins, PlayerAgainstComputerWins, ComputerWins, Width
+    global Player1Wins, Player2Wins, PlayerAgainstComputerWins, ComputerWins, Width, Height, Last2MovesHistory
     print(f"Valid moves are within the range A1-{ConvertCoordsToRef(Height - 1, Width - 1)}")
     GameOver = False
     try:
@@ -323,8 +337,8 @@ def PlayGame(GameMode):
                     Move = input("Enter move: ")
                     IsValid = ProcessMove(Move)
                     match IsValid:
-                        case "Empty string":
-                            print("\033[31mThe entered string is empty!\033[0m")
+                        case "Outside Index":
+                            print("\033[31mIncorrect index of the tile was enterred!\033[0m")
                         case "Incorrect format":
                             print("\033[31mThe move must be entered in the form, similar to A1-D1!\033[0m")
                         case "Double row":
@@ -334,7 +348,7 @@ def PlayGame(GameMode):
                         case "Not enough tiles":
                             print("\033[31mCannot make a move that removes all tiles left from the board!\033[0m")
                         case "Correct move":
-                            pass
+                            LogMove(Move)
                         case _:
                             pass
                 else:
@@ -412,7 +426,6 @@ def Main():
     Menu(Playing, RandomOption, GameMode)
     print("Press enter to continue")
     input()
-
 
 if __name__ == "__main__":
     Main()
