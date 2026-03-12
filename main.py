@@ -239,6 +239,13 @@ def ProcessUndo(Move):
             Restore(Last2MovesHistory[0])
             Last2MovesHistory.pop(0)
             return True
+
+def ProcessSave(Move):
+    if Move == "S":
+        with open("cache.txt", "w") as file:
+            for Row in range(len(Board)):
+                file.write(",".join(Board[Row])+"\n")
+        return True
         
 def ClearMoveHistory():
     if len(Last2MovesHistory) > 1:
@@ -266,9 +273,7 @@ def Restore(Move):
 
 def ProcessMove(Move):
     try:
-        if ProcessHint(Move):
-            return "Correct move"
-        if ProcessUndo(Move):
+        if ProcessHint(Move) or ProcessUndo(Move) or ProcessSave(Move):
             return "Correct move"
         FirstRef, SecondRef = ProcessCoordinates(Move)
         StartCoords = ConvertRefToCoords(FirstRef)
