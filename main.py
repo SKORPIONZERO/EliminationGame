@@ -81,6 +81,98 @@ def ConvertCoordsToRef(Row, Column):
         Ref = Letter + str(Number)
     return Ref
 
+def ProcessCoordinates(Move):
+    if "-" in Move:
+        DashPos = Move.index("-")
+        FirstRef = Move[0:DashPos]
+        SecondRef = Move[DashPos + 1:]
+    else:
+        FirstRef = Move
+        SecondRef = Move
+    if ord(FirstRef[0]) > ord(SecondRef[0]):
+        FirstRef = FirstRef + SecondRef
+        SecondRef = FirstRef[:len(SecondRef)]
+        FirstRef = FirstRef[len(SecondRef):]
+    elif int(FirstRef[1:]) > int(SecondRef[1:]):
+        FirstRef = FirstRef + SecondRef
+        SecondRef = FirstRef[:(len(FirstRef) - len(SecondRef))]
+        FirstRef = FirstRef[len(SecondRef):]
+    return FirstRef, SecondRef
+
+def CountTilesLeft(Board):
+    tilesLeft = 0
+    for row in range(Height):
+        for column in range(Width):
+            if Board[row][column] == TILE:
+                tilesLeft += 1
+    return tilesLeft
+
+def SetBoardSize():
+    global Width
+    global Height
+    try:
+        Width = int(input("Specify board width: "))
+        while Width < 2 or Width > MAX_WIDTH:
+            if Width > MAX_WIDTH:
+                print(f"\033[31mWidth cannot be higher than {MAX_WIDTH}\033[0m")
+            elif Width < 2:
+                print("\033[31mWidth cannot be lower than 2\033[0m")
+            Width = int(input("Specify board width: "))
+        Height = int(input("Specify board height: "))
+        while Height < 2 or Height > MAX_HEIGHT:
+            if Height > MAX_HEIGHT:
+                print(f"\033[31mHeight cannot be higher than {MAX_HEIGHT}\033[0m")
+            elif Height < 2:
+                print("\033[31mHeight cannot be lower than 2\033[0m")
+            Height = int(input("Specify board height: "))
+    except ValueError:
+        print("\033[31mOnly integers are allowed to be entered!\033[0m")
+        print("Height and width become 4")
+        Width = 4
+        Height = 4
+
+def DisplayMenu(RandomOption, GameMode):
+    print("1 - Start game")
+    print(f"2 - Set board size (currently {Width} x {Height})")
+    print(f"3 - Toggle random option (currently {RandomOption})")
+    print("4 - Load test board (4 x 4)")
+    print(f"5 - Change game mode (currently {GameMode})")
+    print("9 - Quit")
+    match GameMode:
+        case "Multi Player":
+            print(f"Current score (Player 1 : Player 2) = {Player1Wins}:{Player2Wins}")
+        case "Single Player":
+            print(f"Current score (Player : Computer) = {PlayerAgainstComputerWins}:{ComputerWins}")
+
+def SelectDifficulty(RandomOption):
+    difficulty = ""
+    if RandomOption == True:
+        while difficulty not in ["low", "mid", "high"]:
+            difficulty = input(
+                "Select difficulty of the game(\033[32mlow\033[0m, \033[33mmid\033[0m, \033[31mhigh\033[0m): ")
+    match difficulty:
+        case "low":
+            difficulty = 1
+        case "mid":
+            difficulty = 2
+        case "high":
+            difficulty = 3
+        case _:
+            print("Difficulty is set to 0")
+            difficulty = 0
+    return difficulty
+
+def LoadTestBoard():
+    global Width
+    global Height
+    Width = 4
+    Height = 4
+    ResetBoard(False)
+    ProcessMove("A1-A4")
+    ProcessMove("B1-B4")
+    ProcessMove("C1-C4")
+    ProcessMove("D1-D2")
+
 def SearchForAllowedMoves():
     tilesLeft = 0
     longestMoveLength = 0
@@ -143,38 +235,40 @@ def ProcessUndo(Move):
     if Move == "U":
         if Last2MovesHistory[0] == "Letter Move":
             print(f"\033[31mCannot undo a single letter move\033[0m")
-        # ======================================================================================================
-        return True
+        else:
+            Restore(Last2MovesHistory[0])
+            Last2MovesHistory.pop(0)
+            return True
+        
+def ClearMoveHistory():
+    if len(Last2MovesHistory) > 1:
+        Last2MovesHistory.pop(0)
 
-def ProcessCoordinates(Move):
-    if "-" in Move:
-        DashPos = Move.index("-")
-        FirstRef = Move[0:DashPos]
-        SecondRef = Move[DashPos + 1:]
+def LogMove(Move):
+    ClearMoveHistory()
+    if len(Move) == 1:
+        Last2MovesHistory.append("Letter Move")
     else:
-        FirstRef = Move
-        SecondRef = Move
-    if ord(FirstRef[0]) > ord(SecondRef[0]):
-        FirstRef = FirstRef + SecondRef
-        SecondRef = FirstRef[:len(SecondRef)]
-        FirstRef = FirstRef[len(SecondRef):]
-    elif int(FirstRef[1:]) > int(SecondRef[1:]):
-        FirstRef = FirstRef + SecondRef
-        SecondRef = FirstRef[:(len(FirstRef) - len(SecondRef))]
-        FirstRef = FirstRef[len(SecondRef):]
-    return FirstRef, SecondRef
+        if Move[:(len(Move)//2)]== Move[(len(Move)//2+1):]:
+            Move = Move[:(len(Move)//2)]
+        Last2MovesHistory.append(Move)
 
-def CountTilesLeft(Board):
-    tilesLeft = 0
-    for row in range(Height):
-        for column in range(Width):
-            if Board[row][column] == TILE:
-                tilesLeft += 1
-    return tilesLeft
+def Restore(Move):
+    FirstRef, SecondRef = ProcessCoordinates(Move)
+    StartCoords = ConvertRefToCoords(FirstRef)
+    EndCoords = ConvertRefToCoords(SecondRef)
+    if StartCoords[0] == EndCoords[0]:
+        for Cell in range(StartCoords[1], EndCoords[1] + 1):
+            Board[StartCoords[0]][Cell] = TILE
+    else:
+        for Cell in range(StartCoords[0], EndCoords[0] + 1):
+            Board[Cell][StartCoords[1]] = TILE
 
 def ProcessMove(Move):
     try:
         if ProcessHint(Move):
+            return "Correct move"
+        if ProcessUndo(Move):
             return "Correct move"
         FirstRef, SecondRef = ProcessCoordinates(Move)
         StartCoords = ConvertRefToCoords(FirstRef)
@@ -213,54 +307,6 @@ def ProcessMove(Move):
         return "Outside Index"
     except ValueError:
         return "Incorrect format"
-
-def SetBoardSize():
-    global Width
-    global Height
-    try:
-        Width = int(input("Specify board width: "))
-        while Width < 2 or Width > MAX_WIDTH:
-            if Width > MAX_WIDTH:
-                print(f"\033[31mWidth cannot be higher than {MAX_WIDTH}\033[0m")
-            elif Width < 2:
-                print("\033[31mWidth cannot be lower than 2\033[0m")
-            Width = int(input("Specify board width: "))
-        Height = int(input("Specify board height: "))
-        while Height < 2 or Height > MAX_HEIGHT:
-            if Height > MAX_HEIGHT:
-                print(f"\033[31mHeight cannot be higher than {MAX_HEIGHT}\033[0m")
-            elif Height < 2:
-                print("\033[31mHeight cannot be lower than 2\033[0m")
-            Height = int(input("Specify board height: "))
-    except ValueError:
-        print("\033[31mOnly integers are allowed to be entered!\033[0m")
-        print("Height and width become 4")
-        Width = 4
-        Height = 4
-
-def DisplayMenu(RandomOption, GameMode):
-    print("1 - Start game")
-    print(f"2 - Set board size (currently {Width} x {Height})")
-    print(f"3 - Toggle random option (currently {RandomOption})")
-    print("4 - Load test board (4 x 4)")
-    print(f"5 - Change game mode (currently {GameMode})")
-    print("9 - Quit")
-    match GameMode:
-        case "Multi Player":
-            print(f"Current score (Player 1 : Player 2) = {Player1Wins}:{Player2Wins}")
-        case "Single Player":
-            print(f"Current score (Player : Computer) = {PlayerAgainstComputerWins}:{ComputerWins}")
-
-def LoadTestBoard():
-    global Width
-    global Height
-    Width = 4
-    Height = 4
-    ResetBoard(False)
-    ProcessMove("A1-A4")
-    ProcessMove("B1-B4")
-    ProcessMove("C1-C4")
-    ProcessMove("D1-D2")
 
 def CheckGameOver():
     Remaining = CountTilesLeft(Board)
@@ -305,19 +351,6 @@ def ProcessComputerMove():
     time.sleep(1)
     print(f"The computer made move: {Move}")
     return IsValid
-
-def ClearMoveHistory():
-    if len(Last2MovesHistory) > 1:
-        Last2MovesHistory.pop(0)
-
-def LogMove(Move):
-    ClearMoveHistory()
-    if len(Move) == 1:
-        Last2MovesHistory.append("Letter Move")
-    else:
-        if Move[:(len(Move)//2)]== Move[(len(Move)//2+1):]:
-            Move = Move[:(len(Move)//2)]
-        Last2MovesHistory.append(Move)
 
 def PlayGame(GameMode):
     global Player1Wins, Player2Wins, PlayerAgainstComputerWins, ComputerWins, Width, Height, Last2MovesHistory
@@ -364,24 +397,6 @@ def PlayGame(GameMode):
                 GameOver = ProcessGameOver(GameMode, NextPlayer)
     except ValueError:
         print("\033[31mCan only enter 1 or 2 for player order!\033[0m")
-
-def SelectDifficulty(RandomOption):
-    difficulty = ""
-    if RandomOption == True:
-        while difficulty not in ["low", "mid", "high"]:
-            difficulty = input(
-                "Select difficulty of the game(\033[32mlow\033[0m, \033[33mmid\033[0m, \033[31mhigh\033[0m): ")
-    match difficulty:
-        case "low":
-            difficulty = 1
-        case "mid":
-            difficulty = 2
-        case "high":
-            difficulty = 3
-        case _:
-            print("Difficulty is set to 0")
-            difficulty = 0
-    return difficulty
 
 def Menu(Playing, RandomOption, GameMode):
     while Playing:
