@@ -11,6 +11,8 @@ Width = 4
 Height = 4
 Board = []
 Last2MovesHistory = []
+GameMode = "Multi Player"
+RandomOption = False
 
 Player1Wins = 0
 Player2Wins = 0
@@ -18,8 +20,8 @@ ComputerWins = 0
 PlayerAgainstComputerWins = 0
 
 
-def ResetBoard(RandomOption, difficulty=1):
-    global Board
+def ResetBoard(difficulty=1):
+    global Board, Width, Height, RandomOption
     Board = []
     for Row in range(Height):
         Board.append([])
@@ -74,6 +76,7 @@ def ConvertRefToCoords(Ref):
     return Coords
 
 def ConvertCoordsToRef(Row, Column):
+    global Height, Width
     Ref = ""
     if Row < Height and Column < Width:
         Letter = chr(Column + 65)
@@ -99,7 +102,8 @@ def ProcessCoordinates(Move):
         FirstRef = FirstRef[len(SecondRef):]
     return FirstRef, SecondRef
 
-def CountTilesLeft(Board):
+def CountTilesLeft():
+    global Board, Width, Height
     tilesLeft = 0
     for row in range(Height):
         for column in range(Width):
@@ -108,8 +112,7 @@ def CountTilesLeft(Board):
     return tilesLeft
 
 def SetBoardSize():
-    global Width
-    global Height
+    global Width, Height
     try:
         Width = int(input("Specify board width: "))
         while Width < 2 or Width > MAX_WIDTH:
@@ -131,7 +134,8 @@ def SetBoardSize():
         Width = 4
         Height = 4
 
-def DisplayMenu(RandomOption, GameMode):
+def DisplayMenu():
+    global GameMode, Width, Height, Player1Wins, Player2Wins, PlayerAgainstComputerWins, ComputerWins, RandomOption
     print("1 - Start game")
     print(f"2 - Set board size (currently {Width} x {Height})")
     print(f"3 - Toggle random option (currently {RandomOption})")
@@ -144,7 +148,8 @@ def DisplayMenu(RandomOption, GameMode):
         case "Single Player":
             print(f"Current score (Player : Computer) = {PlayerAgainstComputerWins}:{ComputerWins}")
 
-def SelectDifficulty(RandomOption):
+def SelectDifficulty():
+    global RandomOption
     difficulty = ""
     if RandomOption == True:
         while difficulty not in ["low", "mid", "high"]:
@@ -163,8 +168,7 @@ def SelectDifficulty(RandomOption):
     return difficulty
 
 def LoadTestBoard():
-    global Width
-    global Height
+    global Width, Height
     Width = 4
     Height = 4
     ResetBoard(False)
@@ -174,13 +178,10 @@ def LoadTestBoard():
     ProcessMove("D1-D2")
 
 def SearchForAllowedMoves():
-    tilesLeft = 0
+    global Board, Height, Width
+    tilesLeft = CountTilesLeft()
     longestMoveLength = 0
     allowedMoves = []
-    for row in range(Height):
-        for column in range(Width):
-            if Board[row][column] == TILE:
-                tilesLeft += 1
     for row in range(Height):
         for column in range(Width):
             for i in range(0, Height):
@@ -239,13 +240,6 @@ def ProcessUndo(Move):
             Restore(Last2MovesHistory[0])
             Last2MovesHistory.pop(0)
             return True
-
-def ProcessSave(Move):
-    if Move == "S":
-        with open("cache.txt", "w") as file:
-            for Row in range(len(Board)):
-                file.write(",".join(Board[Row])+"\n")
-        return True
         
 def ClearMoveHistory():
     if len(Last2MovesHistory) > 1:
@@ -271,14 +265,42 @@ def Restore(Move):
         for Cell in range(StartCoords[0], EndCoords[0] + 1):
             Board[Cell][StartCoords[1]] = TILE
 
-def ProcessMove(Move):
+def ProcessSave(Move, NextPlayer):
+    global Player1Wins, Player2Wins, PlayerAgainstComputerWins, ComputerWins, Width, Height, Board, Last2MovesHistory, GameMode
+    if Move == "S":
+        with open("cache.txt", "w") as file:
+            # Players scores
+            file.write(f"Players Wins: {Player1Wins}:{Player2Wins}\n")
+
+            # Player against Computer scores
+            file.write(f"Player against Computer wins: {PlayerAgainstComputerWins}:{ComputerWins}\n")
+
+            # Size of the Board
+            file.write(f"Size of the Board: {Width}x{Height}\n")
+
+            # Last 2 moves
+            file.write(f"Last 2 moves: {Last2MovesHistory}\n")
+
+            # Which Players turn
+            file.write(f"Which Players turn: {NextPlayer}\n")
+
+            # Game Mode
+            file.write(f"Game Mode: {GameMode}\n")
+
+            # State of the Board
+            for Row in range(len(Board)):
+                file.write(",".join(Board[Row])+"\n")
+        return True
+
+def ProcessMove(Move, NextPlayer):
+    global Board
     try:
-        if ProcessHint(Move) or ProcessUndo(Move) or ProcessSave(Move):
+        if ProcessHint(Move) or ProcessUndo(Move) or ProcessSave(Move, NextPlayer):
             return "Correct move"
         FirstRef, SecondRef = ProcessCoordinates(Move)
         StartCoords = ConvertRefToCoords(FirstRef)
         EndCoords = ConvertRefToCoords(SecondRef)
-        tilesLeft = CountTilesLeft(Board)
+        tilesLeft = CountTilesLeft()
         if StartCoords[0] != EndCoords[0] and StartCoords[1] != EndCoords[1]:
             return "Double row"
         if StartCoords[0] == EndCoords[0]:
@@ -314,14 +336,14 @@ def ProcessMove(Move):
         return "Incorrect format"
 
 def CheckGameOver():
-    Remaining = CountTilesLeft(Board)
+    Remaining = CountTilesLeft()
     if Remaining == 1:
         return True
     else:
         return False
 
-def ProcessGameOver(GameMode, NextPlayer):
-    global Player1Wins, Player2Wins, PlayerAgainstComputerWins, ComputerWins
+def ProcessGameOver(NextPlayer):
+    global Player1Wins, Player2Wins, PlayerAgainstComputerWins, ComputerWins, Last2MovesHistory
     GameOver = True
     if GameMode == "Multi Player":
         print(f"\033[32mGame over - player {NextPlayer % 2 + 1} wins\033[0m")
@@ -336,6 +358,7 @@ def ProcessGameOver(GameMode, NextPlayer):
         else:
             print(f"\033[32mGame over - player wins\033[0m")
             PlayerAgainstComputerWins += 1
+    Last2MovesHistory = []
     print()
     DisplayBoard()
     print()
@@ -343,7 +366,7 @@ def ProcessGameOver(GameMode, NextPlayer):
     input()
     return GameOver
 
-def ProcessComputerMove():
+def ProcessComputerMove(NextPlayer):
     randomizer = random.uniform(1, 10)
     if randomizer < 5:
         Move = random.choice(SearchForLongestMoves())
@@ -352,18 +375,20 @@ def ProcessComputerMove():
     MiddleIndex = Move.index("-")
     if Move[:MiddleIndex] == Move[MiddleIndex + 1:]:
         Move = Move[:MiddleIndex]
-    IsValid = ProcessMove(Move)
+    IsValid = ProcessMove(Move, NextPlayer)
     time.sleep(1)
     print(f"The computer made move: {Move}")
     return IsValid
 
-def PlayGame(GameMode):
-    global Player1Wins, Player2Wins, PlayerAgainstComputerWins, ComputerWins, Width, Height, Last2MovesHistory
+def PlayGame():
+    global Player1Wins, Player2Wins, PlayerAgainstComputerWins, ComputerWins, Width, Height, Last2MovesHistory, GameMode
     print(f"Valid moves are within the range A1-{ConvertCoordsToRef(Height - 1, Width - 1)}")
     GameOver = False
     try:
         if GameMode == "Multi Player":
             NextPlayer = int(input("Enter which player is going first: "))
+            if NextPlayer not in [1, 2]:
+                raise ValueError
         else:
             NextPlayer = random.choice([1, -1])
         while not GameOver:
@@ -373,7 +398,7 @@ def PlayGame(GameMode):
             while IsValid != "Correct move":
                 if NextPlayer > 0:
                     Move = input("Enter move: ")
-                    IsValid = ProcessMove(Move)
+                    IsValid = ProcessMove(Move, NextPlayer)
                     match IsValid:
                         case "Outside Index":
                             print("\033[31mIncorrect index of the tile was enterred!\033[0m")
@@ -386,11 +411,15 @@ def PlayGame(GameMode):
                         case "Not enough tiles":
                             print("\033[31mCannot make a move that removes all tiles left from the board!\033[0m")
                         case "Correct move":
-                            LogMove(Move)
+                            if GameMode == "Multi Player":
+                                LogMove(Move)
+                            else:
+                                Last2MovesHistory = []
+                                LogMove(Move)
                         case _:
                             pass
                 else:
-                    ProcessComputerMove()
+                    IsValid = ProcessComputerMove(NextPlayer)
             if GameMode == "Multi Player":
                 NextPlayer = NextPlayer % 2 + 1
             else:
@@ -399,22 +428,23 @@ def PlayGame(GameMode):
                 else:
                     NextPlayer = 1
             if CheckGameOver():
-                GameOver = ProcessGameOver(GameMode, NextPlayer)
+                GameOver = ProcessGameOver(NextPlayer)
     except ValueError:
         print("\033[31mCan only enter 1 or 2 for player order!\033[0m")
 
-def Menu(Playing, RandomOption, GameMode):
+def Menu(Playing):
+    global RandomOption, GameMode
     while Playing:
         ExitMenu = False
         while not ExitMenu:
             print()
-            DisplayMenu(RandomOption, GameMode)
+            DisplayMenu()
             try:
                 UserInput = int(input("Enter a choice: "))
                 if UserInput == 1:
                     ExitMenu = True
-                    difficulty = SelectDifficulty(RandomOption)
-                    ResetBoard(RandomOption, difficulty)
+                    difficulty = SelectDifficulty()
+                    ResetBoard(difficulty)
                 elif UserInput == 2:
                     SetBoardSize()
                 elif UserInput == 3:
@@ -437,13 +467,11 @@ def Menu(Playing, RandomOption, GameMode):
             except ValueError:
                 print("\033[31mOnly integers are allowed to be entered!\033[0m")
         if Playing:
-            PlayGame(GameMode)
+            PlayGame()
 
 def Main():
     Playing = True
-    RandomOption = False
-    GameMode = "Multi Player"
-    Menu(Playing, RandomOption, GameMode)
+    Menu(Playing)
     print("Press enter to continue")
     input()
 
