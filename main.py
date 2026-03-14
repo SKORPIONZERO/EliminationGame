@@ -95,13 +95,9 @@ def ProcessCoordinates(Move):
         FirstRef = Move
         SecondRef = Move
     if ord(FirstRef[0]) > ord(SecondRef[0]):
-        FirstRef = FirstRef + SecondRef
-        SecondRef = FirstRef[:len(SecondRef)]
-        FirstRef = FirstRef[len(SecondRef):]
+        FirstRef, SecondRef = SecondRef, FirstRef
     elif int(FirstRef[1:]) > int(SecondRef[1:]):
-        FirstRef = FirstRef + SecondRef
-        SecondRef = FirstRef[:(len(FirstRef) - len(SecondRef))]
-        FirstRef = FirstRef[len(SecondRef):]
+        FirstRef, SecondRef = SecondRef, FirstRef
     return FirstRef, SecondRef
 
 def CountTilesLeft():
