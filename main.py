@@ -88,7 +88,7 @@ def ConvertRefToCoords(Ref):
     '''Converts referenced move in the form A1-D1 into the indexes of the 2D list'''
     Column = ord(Ref[0]) - 65
     Row = int(Ref[1:]) - 1
-    if Row < Height and Column < Width:
+    if 0 <= Row < Height and 0 <= Column < Width:
         Coords = [Row, Column]
     else:
         Coords = []
@@ -410,6 +410,38 @@ def ProcessHelp(Move):
     else:
         return False
 
+def ProcessSameLetterMove(StartCoords, EndCoords, tilesLeft):
+    '''Processes move on the same column'''
+    ToRemove = EndCoords[0] - StartCoords[0] + 1
+    for Cell in range(StartCoords[0], EndCoords[0] + 1):
+        if Board[Cell][StartCoords[1]] == TILE:
+            ToRemove -= 1
+            tilesLeft -= 1
+    if ToRemove == 0:
+        for Cell in range(StartCoords[0], EndCoords[0] + 1):
+            if tilesLeft < 1:
+                return "Not enough tiles"
+            Board[Cell][StartCoords[1]] = NO_TILE
+    else:
+        return "Empty tile on the way"
+    return "Correct move"
+
+def ProcessDifferentLetterMove(StartCoords, EndCoords, tilesLeft, MoveType):
+    '''Processes move on the same row or a diagonal move'''
+    ToRemove = EndCoords[1] - StartCoords[1] + 1
+    for Cell in range(StartCoords[1], EndCoords[1] + 1):
+        if Board[StartCoords[0]][Cell] == TILE:
+            ToRemove -= 1
+            tilesLeft -= 1
+    if ToRemove == 0:
+        for Cell in range(StartCoords[1], EndCoords[1] + 1):
+            if tilesLeft < 1:
+                return "Not enough tiles"
+            Board[StartCoords[0]][Cell] = NO_TILE
+    else:
+        return "Empty tile on the way"
+    return "Correct move"
+
 def ProcessMove(Move, NextPlayer = 0, TestGame = False):
     '''Processes the move with either reference or letter and returns a key string'''
     global Board
@@ -428,34 +460,18 @@ def ProcessMove(Move, NextPlayer = 0, TestGame = False):
         StartCoords = ConvertRefToCoords(FirstRef)
         EndCoords = ConvertRefToCoords(SecondRef)
         tilesLeft = CountTilesLeft()
+        MoveType = "Straight"
+        print(StartCoords, EndCoords)
         if StartCoords[0] != EndCoords[0] and StartCoords[1] != EndCoords[1]:
             return "Double row"
-        if StartCoords[0] == EndCoords[0]:
-            ToRemove = EndCoords[1] - StartCoords[1] + 1
-            for Cell in range(StartCoords[1], EndCoords[1] + 1):
-                if Board[StartCoords[0]][Cell] == TILE:
-                    ToRemove -= 1
-                    tilesLeft -= 1
-            if ToRemove == 0:
-                for Cell in range(StartCoords[1], EndCoords[1] + 1):
-                    if tilesLeft < 1:
-                        return "Not enough tiles"
-                    Board[StartCoords[0]][Cell] = NO_TILE
-            else:
-                return "Empty tile on the way"
+        if StartCoords[1] == EndCoords[1]:
+            MoveOutcome = ProcessSameLetterMove(StartCoords, EndCoords, tilesLeft)
+            if MoveOutcome != "Correct move":
+                return MoveOutcome
         else:
-            ToRemove = EndCoords[0] - StartCoords[0] + 1
-            for Cell in range(StartCoords[0], EndCoords[0] + 1):
-                if Board[Cell][StartCoords[1]] == TILE:
-                    ToRemove -= 1
-                    tilesLeft -= 1
-            if ToRemove == 0:
-                for Cell in range(StartCoords[0], EndCoords[0] + 1):
-                    if tilesLeft < 1:
-                        return "Not enough tiles"
-                    Board[Cell][StartCoords[1]] = NO_TILE
-            else:
-                return "Empty tile on the way"
+            MoveOutcome = ProcessDifferentLetterMove(StartCoords, EndCoords, tilesLeft, MoveType)
+            if MoveOutcome != "Correct move":
+                return MoveOutcome
         return "Correct move"
     except IndexError:
         return "Outside Index"
