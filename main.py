@@ -115,7 +115,7 @@ def ProcessCoordinates(Move):
         SecondRef = Move
     if ord(FirstRef[0]) > ord(SecondRef[0]):
         FirstRef, SecondRef = SecondRef, FirstRef
-    elif int(FirstRef[1:]) > int(SecondRef[1:]):
+    elif int(FirstRef[1:]) > int(SecondRef[1:]) and ord(FirstRef[0]) == ord(SecondRef[0]):
         FirstRef, SecondRef = SecondRef, FirstRef
     return FirstRef, SecondRef
 
@@ -418,9 +418,9 @@ def ProcessSameLetterMove(StartCoords, EndCoords, tilesLeft):
             ToRemove -= 1
             tilesLeft -= 1
     if ToRemove == 0:
+        if tilesLeft < 1:
+            return "Not enough tiles"
         for Cell in range(StartCoords[0], EndCoords[0] + 1):
-            if tilesLeft < 1:
-                return "Not enough tiles"
             Board[Cell][StartCoords[1]] = NO_TILE
     else:
         return "Empty tile on the way"
@@ -434,36 +434,47 @@ def ProcessDifferentLetterMove(StartCoords, EndCoords, tilesLeft, MoveType):
             ToRemove -= 1
             tilesLeft -= 1
     if ToRemove == 0:
+        if tilesLeft < 1:
+            return "Not enough tiles"
         for Cell in range(StartCoords[1], EndCoords[1] + 1):
-            if tilesLeft < 1:
-                return "Not enough tiles"
             Board[StartCoords[0]][Cell] = NO_TILE
     else:
         return "Empty tile on the way"
     return "Correct move"
 
+def ProcessSingleLetterMove(Move, NextPlayer, TestGame):
+    '''Processes single letter moves involving maintaining game process'''
+    if ProcessHelp(Move):
+        return "Help"
+    if ProcessHint(Move):
+        return "Hint"
+    if ProcessUndo(Move):
+        return "Correct move"
+    if ProcessQuit(Move):
+        return "Quited Game"
+    if  ProcessSave(Move, NextPlayer, TestGame):
+        return "Saved Game"
+    return "Not single letter"
+
 def ProcessMove(Move, NextPlayer = 0, TestGame = False):
     '''Processes the move with either reference or letter and returns a key string'''
     global Board
     try:
-        if ProcessHelp(Move):
-            return "Help"
-        if ProcessHint(Move):
-            return "Hint"
-        if ProcessUndo(Move):
-            return "Correct move"
-        if ProcessQuit(Move):
-            return "Quited Game"
-        if  ProcessSave(Move, NextPlayer, TestGame):
-            return "Saved Game"
+        MoveType = ProcessSingleLetterMove(Move, NextPlayer, TestGame)
+        if MoveType != "Not single letter":
+            return MoveType
         FirstRef, SecondRef = ProcessCoordinates(Move)
         StartCoords = ConvertRefToCoords(FirstRef)
         EndCoords = ConvertRefToCoords(SecondRef)
         tilesLeft = CountTilesLeft()
         MoveType = "Straight"
+        print(FirstRef, SecondRef)
         print(StartCoords, EndCoords)
         if StartCoords[0] != EndCoords[0] and StartCoords[1] != EndCoords[1]:
-            return "Double row"
+            if abs(StartCoords[0] - EndCoords[0]) == abs(StartCoords[1] - EndCoords[1]):
+                MoveType = "Diagonal"
+            else:
+                return "Double row"
         if StartCoords[1] == EndCoords[1]:
             MoveOutcome = ProcessSameLetterMove(StartCoords, EndCoords, tilesLeft)
             if MoveOutcome != "Correct move":
@@ -555,7 +566,7 @@ def PlayGame(LoadedGame, TestGame):
                         case "Incorrect format":
                             print("\033[31mThe move must be entered in the form, similar to A1-D1!\033[0m")
                         case "Double row":
-                            print("\033[31mThe player can only make a move across a single straight line!\033[0m")
+                            print("\033[31mThe player can only make a move across a single straight or ideal diagonal line!\033[0m")
                         case "Empty tile on the way":
                             print("\033[31mThere are empty tiles on the way!\033[0m")
                         case "Not enough tiles":
