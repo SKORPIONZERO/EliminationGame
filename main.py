@@ -428,18 +428,40 @@ def ProcessSameLetterMove(StartCoords, EndCoords, tilesLeft):
 
 def ProcessDifferentLetterMove(StartCoords, EndCoords, tilesLeft, MoveType):
     '''Processes move on the same row or a diagonal move'''
-    ToRemove = EndCoords[1] - StartCoords[1] + 1
-    for Cell in range(StartCoords[1], EndCoords[1] + 1):
-        if Board[StartCoords[0]][Cell] == TILE:
-            ToRemove -= 1
-            tilesLeft -= 1
-    if ToRemove == 0:
-        if tilesLeft < 1:
-            return "Not enough tiles"
+    if MoveType == "Straight":
+        ToRemove = EndCoords[1] - StartCoords[1] + 1
         for Cell in range(StartCoords[1], EndCoords[1] + 1):
-            Board[StartCoords[0]][Cell] = NO_TILE
+            if Board[StartCoords[0]][Cell] == TILE:
+                ToRemove -= 1
+                tilesLeft -= 1
+        if ToRemove == 0:
+            if tilesLeft < 1:
+                return "Not enough tiles"
+            for Cell in range(StartCoords[1], EndCoords[1] + 1):
+                Board[StartCoords[0]][Cell] = NO_TILE
+        else:
+            return "Empty tile on the way"
     else:
-        return "Empty tile on the way"
+        ToRemove = EndCoords[1] - StartCoords[1] + 1
+        for Cell in range(EndCoords[1]-StartCoords[1]+1):
+            if StartCoords[0] < EndCoords[0]:
+                if Board[StartCoords[0]+Cell][StartCoords[1]+Cell] == TILE:
+                    ToRemove -= 1
+                    tilesLeft -= 1
+            else:
+                if Board[StartCoords[0]-Cell][StartCoords[1]+Cell] == TILE:
+                    ToRemove -= 1
+                    tilesLeft -= 1
+        if ToRemove == 0:
+            if tilesLeft < 1:
+                return "Not enough tiles"
+            for Cell in range(EndCoords[1]-StartCoords[1]+1):
+                if StartCoords[0] < EndCoords[0]:
+                    Board[StartCoords[0]+Cell][StartCoords[1]+Cell] = NO_TILE
+                else:
+                    Board[StartCoords[0]-Cell][StartCoords[1]+Cell] = NO_TILE
+        else:
+            return "Empty tile on the way"
     return "Correct move"
 
 def ProcessSingleLetterMove(Move, NextPlayer, TestGame):
