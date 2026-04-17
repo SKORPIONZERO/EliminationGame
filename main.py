@@ -23,7 +23,6 @@ Player2Wins = 0
 ComputerWins = 0
 PlayerAgainstComputerWins = 0
 
-
 def ResetBoard(difficulty=1):
     '''Resets the Board and fills it with tiles based on the RandomOption'''
     global Board, Width, Height, RandomOption
@@ -230,13 +229,33 @@ def SearchForAllowedMoves():
                                     longestMoveLength = j + 1
                     else:
                         break
+            for k in range(min(Width, Height)+1):
+                if 0<=row+k<Height and 0<=column+k<Width:
+                    if Board[row + k][column+k] == TILE:
+                        if f"{ConvertCoordsToRef(row, column)}-{ConvertCoordsToRef(row + k, column+k)}" not in allowedMoves:
+                            if abs(k)+1 < tilesLeft:
+                                allowedMoves.append(
+                                    f"{ConvertCoordsToRef(row, column)}-{ConvertCoordsToRef(row + k, column+k)}")
+                                if abs(k) + 1 > longestMoveLength:
+                                    longestMoveLength = abs(k) + 1
+                    else:
+                        break
+            for n in range(min(Width, Height)+1):
+                if 0<=row+n<Height and 0<=column-n<Width:
+                    if Board[row + n][column-n] == TILE:
+                        if f"{ConvertCoordsToRef(row, column)}-{ConvertCoordsToRef(row + n, column - n)}" not in allowedMoves:
+                            if abs(n)+1 < tilesLeft:
+                                allowedMoves.append(
+                                    f"{ConvertCoordsToRef(row, column)}-{ConvertCoordsToRef(row + n, column-n)}")
+                                if abs(n) + 1 > longestMoveLength:
+                                    longestMoveLength = abs(n) + 1
+                    else:
+                        break
     return allowedMoves, longestMoveLength
 
 def SearchForLongestMoves():
     '''Out of allowed moves selects the longest moves and stores them in a list'''
-    allowedMoves = SearchForAllowedMoves()
-    longestMoveLength = allowedMoves[1]
-    allowedMoves = allowedMoves[0]
+    allowedMoves, longestMoveLength = SearchForAllowedMoves()
     longestMoves = []
     for i in allowedMoves:
         MiddleIndex = i.index("-")
@@ -265,6 +284,8 @@ def ProcessUndo(Move):
         if len(Last2MovesHistory):
             if Last2MovesHistory[0] == "Letter Move":
                 print(f"\033[31mCannot undo a single letter move\033[0m")
+            elif Last2MovesHistory[0] == "Start":
+                print(f"\033[31mNothing to undo yet\033[0m")
             else:
                 Restore(Last2MovesHistory[0])
                 Last2MovesHistory.pop(0)
@@ -279,6 +300,8 @@ def ClearMoveHistory():
 def LogMove(Move):
     '''Logs the move in the reference form'''
     ClearMoveHistory()
+    if len(Last2MovesHistory) == 0 and GameMode == "Multi Player":
+        Last2MovesHistory.append("Start")
     if len(Move) == 1:
         Last2MovesHistory.append("Letter Move")
     else:
@@ -291,12 +314,23 @@ def Restore(Move):
     FirstRef, SecondRef = ProcessCoordinates(Move)
     StartCoords = ConvertRefToCoords(FirstRef)
     EndCoords = ConvertRefToCoords(SecondRef)
-    if StartCoords[0] == EndCoords[0]:
-        for Cell in range(StartCoords[1], EndCoords[1] + 1):
-            Board[StartCoords[0]][Cell] = TILE
+    MoveType = "Straight"
+    if StartCoords[0] != EndCoords[0] and StartCoords[1] != EndCoords[1]:
+        if abs(StartCoords[0] - EndCoords[0]) == abs(StartCoords[1] - EndCoords[1]):
+            MoveType = "Diagonal"
+    if MoveType == "Straight":
+        if StartCoords[0] == EndCoords[0]:
+            for Cell in range(StartCoords[1], EndCoords[1] + 1):
+                Board[StartCoords[0]][Cell] = TILE
+        else:
+            for Cell in range(StartCoords[0], EndCoords[0] + 1):
+                Board[Cell][StartCoords[1]] = TILE
     else:
-        for Cell in range(StartCoords[0], EndCoords[0] + 1):
-            Board[Cell][StartCoords[1]] = TILE
+        for Cell in range(EndCoords[1]-StartCoords[1]+1):
+            if StartCoords[0] < EndCoords[0]:
+                Board[StartCoords[0]+Cell][StartCoords[1]+Cell] = TILE
+            else:
+                Board[StartCoords[0]-Cell][StartCoords[1]+Cell] = TILE
 
 def ProcessSave(Move, NextPlayer, TestGame):
     '''Saves the game's data into the cache file'''
@@ -464,7 +498,7 @@ def ProcessDifferentLetterMove(StartCoords, EndCoords, tilesLeft, MoveType):
             return "Empty tile on the way"
     return "Correct move"
 
-def ProcessSingleLetterMove(Move, NextPlayer, TestGame):
+def ProcessUtilMove(Move, NextPlayer, TestGame):
     '''Processes single letter moves involving maintaining game process'''
     if ProcessHelp(Move):
         return "Help"
@@ -482,16 +516,16 @@ def ProcessMove(Move, NextPlayer = 0, TestGame = False):
     '''Processes the move with either reference or letter and returns a key string'''
     global Board
     try:
-        MoveType = ProcessSingleLetterMove(Move, NextPlayer, TestGame)
+        MoveType = ProcessUtilMove(Move, NextPlayer, TestGame)
         if MoveType != "Not single letter":
             return MoveType
+        if len(Move) == 1:
+            return "Incorrect format"
         FirstRef, SecondRef = ProcessCoordinates(Move)
         StartCoords = ConvertRefToCoords(FirstRef)
         EndCoords = ConvertRefToCoords(SecondRef)
         tilesLeft = CountTilesLeft()
         MoveType = "Straight"
-        print(FirstRef, SecondRef)
-        print(StartCoords, EndCoords)
         if StartCoords[0] != EndCoords[0] and StartCoords[1] != EndCoords[1]:
             if abs(StartCoords[0] - EndCoords[0]) == abs(StartCoords[1] - EndCoords[1]):
                 MoveType = "Diagonal"
@@ -547,7 +581,7 @@ def ProcessGameOver(NextPlayer):
 def ProcessComputerMove(NextPlayer):
     '''Makes a random move out of allowed ones'''
     randomizer = random.uniform(1, 10)
-    if randomizer < 5:
+    if randomizer < 3:
         Move = random.choice(SearchForLongestMoves())
     else:
         Move = random.choice(SearchForAllowedMoves()[0])
@@ -613,10 +647,7 @@ def PlayGame(LoadedGame, TestGame):
             if GameMode == "Multi Player":
                 NextPlayer = NextPlayer % 2 + 1
             else:
-                if NextPlayer == 1:
-                    NextPlayer = -1
-                else:
-                    NextPlayer = 1
+                NextPlayer = -NextPlayer
             if CheckGameOver():
                 GameOver = ProcessGameOver(NextPlayer)
     except:
