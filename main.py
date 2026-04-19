@@ -23,8 +23,9 @@ Player2Wins = 0
 ComputerWins = 0
 PlayerAgainstComputerWins = 0
 
+
 def ResetBoard(difficulty=1):
-    '''Resets the Board and fills it with tiles based on the RandomOption'''
+    """Resets the Board and fills it with tiles based on the RandomOption"""
     global Board, Width, Height, RandomOption
     Board = []
     for Row in range(Height):
@@ -36,25 +37,28 @@ def ResetBoard(difficulty=1):
                 Board[Row].append(TILE)
     CheckBoardForValidity()
 
+
 def GetRandomTile(difficulty):
-    '''Sets tiles randomly based on the difficulty'''
+    """Sets tiles randomly based on the difficulty"""
     Rand = random.uniform(1, 10)
     if Rand < (11 - difficulty * 1.75):
         return TILE
     else:
         return NO_TILE
 
+
 def CheckBoardForValidity():
-    '''Checks whether the map is valid, if not, adds tiles until becomes valid'''
+    """Checks whether the map is valid, if not, adds tiles until becomes valid"""
     global Board
     while CountTilesLeft() <= 1:
-        coorsinates = [random.randint(0,Height-1),random.randint(0,Width-1)]
+        coorsinates = [random.randint(0, Height - 1), random.randint(0, Width - 1)]
         while Board[coorsinates[0]][coorsinates[1]] != NO_TILE:
-            coorsinates = [random.randint(0,Height-1),random.randint(0,Width-1)]
+            coorsinates = [random.randint(0, Height - 1), random.randint(0, Width - 1)]
         Board[coorsinates[0]][coorsinates[1]] = TILE
 
+
 def DisplayState(PlayerNumber):
-    '''Displayes which players turn and the map'''
+    """Displayes which players turn and the map"""
     print("-------------------------")
     if PlayerNumber == -1:
         print(f"Computer's turn")
@@ -63,16 +67,17 @@ def DisplayState(PlayerNumber):
     print()
     DisplayBoard()
 
+
 def DisplayBoard():
-    '''Displays the Board  with labels for every row and column'''
-    print("  ", end='')
+    """Displays the Board  with labels for every row and column"""
+    print("  ", end="")
     for Column in range(Width):
         if Column >= 26:
             Header = chr(Column // 26 + 64) + chr((Column % 26) + 65)
-            print(f" {Header} ", end='')
+            print(f" {Header} ", end="")
         else:
             Header = chr(Column + 65)
-            print(f"  {Header} ", end='')
+            print(f"  {Header} ", end="")
     print()
     for Row in range(Height):
         if Row >= 9:
@@ -80,11 +85,12 @@ def DisplayBoard():
         else:
             print(Row + 1, end=" ")
         for Column in range(Width):
-            print(f" {Board[Row][Column]}", end='')
+            print(f" {Board[Row][Column]}", end="")
         print()
 
+
 def ConvertRefToCoords(Ref):
-    '''Converts referenced move in the form A1-D1 into the indexes of the 2D list'''
+    """Converts referenced move in the form A1-D1 into the indexes of the 2D list"""
     Column = ord(Ref[0]) - 65
     Row = int(Ref[1:]) - 1
     if 0 <= Row < Height and 0 <= Column < Width:
@@ -93,8 +99,9 @@ def ConvertRefToCoords(Ref):
         Coords = []
     return Coords
 
+
 def ConvertCoordsToRef(Row, Column):
-    '''Converts indexes of the 2D list into referenced move in the form A1-D1'''
+    """Converts indexes of the 2D list into referenced move in the form A1-D1"""
     global Height, Width
     Ref = ""
     if Row < Height and Column < Width:
@@ -103,23 +110,27 @@ def ConvertCoordsToRef(Row, Column):
         Ref = Letter + str(Number)
     return Ref
 
+
 def ProcessCoordinates(Move):
-    '''Converts a move into start and finish tiles for the move and makes them valid if they are reversed'''
+    """Converts a move into start and finish tiles for the move and makes them valid if they are reversed"""
     if "-" in Move:
         DashPos = Move.index("-")
         FirstRef = Move[0:DashPos]
-        SecondRef = Move[DashPos + 1:]
+        SecondRef = Move[DashPos + 1 :]
     else:
         FirstRef = Move
         SecondRef = Move
     if ord(FirstRef[0]) > ord(SecondRef[0]):
         FirstRef, SecondRef = SecondRef, FirstRef
-    elif int(FirstRef[1:]) > int(SecondRef[1:]) and ord(FirstRef[0]) == ord(SecondRef[0]):
+    elif int(FirstRef[1:]) > int(SecondRef[1:]) and ord(FirstRef[0]) == ord(
+        SecondRef[0]
+    ):
         FirstRef, SecondRef = SecondRef, FirstRef
     return FirstRef, SecondRef
 
+
 def CountTilesLeft():
-    '''Counts the number of tiles left on the Board'''
+    """Counts the number of tiles left on the Board"""
     global Board, Width, Height
     tilesLeft = 0
     for row in range(Height):
@@ -128,8 +139,9 @@ def CountTilesLeft():
                 tilesLeft += 1
     return tilesLeft
 
+
 def SetBoardSize():
-    '''Sets the Board size with boundaries of minimum 2x2 and maximum 26x26'''
+    """Sets the Board size with boundaries of minimum 2x2 and maximum 26x26"""
     global Width, Height
     try:
         Width = int(input("Specify board width: "))
@@ -152,8 +164,9 @@ def SetBoardSize():
         Width = 4
         Height = 4
 
+
 def DisplayMenu():
-    '''Displays the main menu with options'''
+    """Displays the main menu with options"""
     global GameMode, Width, Height, Player1Wins, Player2Wins, PlayerAgainstComputerWins, ComputerWins, RandomOption
     print("1 - Start game")
     print(f"2 - Set board size (currently {Width} x {Height})")
@@ -166,16 +179,20 @@ def DisplayMenu():
         case "Multi Player":
             print(f"Current score (Player 1 : Player 2) = {Player1Wins}:{Player2Wins}")
         case "Single Player":
-            print(f"Current score (Player : Computer) = {PlayerAgainstComputerWins}:{ComputerWins}")
+            print(
+                f"Current score (Player : Computer) = {PlayerAgainstComputerWins}:{ComputerWins}"
+            )
+
 
 def SelectDifficulty():
-    '''Selecting difficulty for the Board, based on which the number of spaces will be placed'''
+    """Selecting difficulty for the Board, based on which the number of spaces will be placed"""
     global RandomOption
     difficulty = ""
     if RandomOption == True:
         while difficulty not in ["low", "mid", "high"]:
             difficulty = input(
-                "Select difficulty of the game(\033[32mlow\033[0m, \033[33mmid\033[0m, \033[31mhigh\033[0m): ")
+                "Select difficulty of the game(\033[32mlow\033[0m, \033[33mmid\033[0m, \033[31mhigh\033[0m): "
+            )
     match difficulty:
         case "low":
             difficulty = 1
@@ -188,8 +205,9 @@ def SelectDifficulty():
             difficulty = 0
     return difficulty
 
+
 def LoadTestBoard():
-    '''Creates the test Board with 2 tiles'''
+    """Creates the test Board with 2 tiles"""
     global Width, Height
     Width = 4
     Height = 4
@@ -199,8 +217,9 @@ def LoadTestBoard():
     ProcessMove("C1-C4")
     ProcessMove("D1-D2")
 
+
 def SearchForAllowedMoves():
-    '''Searches for all allowed moves on the Board and stores them in a list in the form of reference(A1-A4)'''
+    """Searches for all allowed moves on the Board and stores them in a list in the form of reference(A1-A4)"""
     global Board, Height, Width
     tilesLeft = CountTilesLeft()
     longestMoveLength = 0
@@ -210,10 +229,14 @@ def SearchForAllowedMoves():
             for i in range(0, Height):
                 if row + i < Height:
                     if Board[row + i][column] == TILE:
-                        if f"{ConvertCoordsToRef(row, column)}-{ConvertCoordsToRef(row + i, column)}" not in allowedMoves:
+                        if (
+                            f"{ConvertCoordsToRef(row, column)}-{ConvertCoordsToRef(row + i, column)}"
+                            not in allowedMoves
+                        ):
                             if i + 1 < tilesLeft:
                                 allowedMoves.append(
-                                    f"{ConvertCoordsToRef(row, column)}-{ConvertCoordsToRef(row + i, column)}")
+                                    f"{ConvertCoordsToRef(row, column)}-{ConvertCoordsToRef(row + i, column)}"
+                                )
                                 if i + 1 > longestMoveLength:
                                     longestMoveLength = i + 1
                     else:
@@ -221,46 +244,59 @@ def SearchForAllowedMoves():
             for j in range(0, Width):
                 if column + j < Width:
                     if Board[row][column + j] == TILE:
-                        if f"{ConvertCoordsToRef(row, column)}-{ConvertCoordsToRef(row, column + j)}" not in allowedMoves:
+                        if (
+                            f"{ConvertCoordsToRef(row, column)}-{ConvertCoordsToRef(row, column + j)}"
+                            not in allowedMoves
+                        ):
                             if j + 1 < tilesLeft:
                                 allowedMoves.append(
-                                    f"{ConvertCoordsToRef(row, column)}-{ConvertCoordsToRef(row, column + j)}")
+                                    f"{ConvertCoordsToRef(row, column)}-{ConvertCoordsToRef(row, column + j)}"
+                                )
                                 if j + 1 > longestMoveLength:
                                     longestMoveLength = j + 1
                     else:
                         break
-            for k in range(min(Width, Height)+1):
-                if 0<=row+k<Height and 0<=column+k<Width:
-                    if Board[row + k][column+k] == TILE:
-                        if f"{ConvertCoordsToRef(row, column)}-{ConvertCoordsToRef(row + k, column+k)}" not in allowedMoves:
-                            if abs(k)+1 < tilesLeft:
+            for k in range(min(Width, Height) + 1):
+                if 0 <= row + k < Height and 0 <= column + k < Width:
+                    if Board[row + k][column + k] == TILE:
+                        if (
+                            f"{ConvertCoordsToRef(row, column)}-{ConvertCoordsToRef(row + k, column+k)}"
+                            not in allowedMoves
+                        ):
+                            if abs(k) + 1 < tilesLeft:
                                 allowedMoves.append(
-                                    f"{ConvertCoordsToRef(row, column)}-{ConvertCoordsToRef(row + k, column+k)}")
+                                    f"{ConvertCoordsToRef(row, column)}-{ConvertCoordsToRef(row + k, column+k)}"
+                                )
                                 if abs(k) + 1 > longestMoveLength:
                                     longestMoveLength = abs(k) + 1
                     else:
                         break
-            for n in range(min(Width, Height)+1):
-                if 0<=row+n<Height and 0<=column-n<Width:
-                    if Board[row + n][column-n] == TILE:
-                        if f"{ConvertCoordsToRef(row, column)}-{ConvertCoordsToRef(row + n, column - n)}" not in allowedMoves:
-                            if abs(n)+1 < tilesLeft:
+            for n in range(min(Width, Height) + 1):
+                if 0 <= row + n < Height and 0 <= column - n < Width:
+                    if Board[row + n][column - n] == TILE:
+                        if (
+                            f"{ConvertCoordsToRef(row, column)}-{ConvertCoordsToRef(row + n, column - n)}"
+                            not in allowedMoves
+                        ):
+                            if abs(n) + 1 < tilesLeft:
                                 allowedMoves.append(
-                                    f"{ConvertCoordsToRef(row, column)}-{ConvertCoordsToRef(row + n, column-n)}")
+                                    f"{ConvertCoordsToRef(row, column)}-{ConvertCoordsToRef(row + n, column-n)}"
+                                )
                                 if abs(n) + 1 > longestMoveLength:
                                     longestMoveLength = abs(n) + 1
                     else:
                         break
     return allowedMoves, longestMoveLength
 
+
 def SearchForLongestMoves():
-    '''Out of allowed moves selects the longest moves and stores them in a list'''
+    """Out of allowed moves selects the longest moves and stores them in a list"""
     allowedMoves, longestMoveLength = SearchForAllowedMoves()
     longestMoves = []
     for i in allowedMoves:
         MiddleIndex = i.index("-")
         MovePart1 = i[:MiddleIndex]
-        MovePart2 = i[MiddleIndex + 1:]
+        MovePart2 = i[MiddleIndex + 1 :]
         if MovePart1[0] != MovePart2[0]:
             moveLength = abs(ord(MovePart1[0]) - ord(MovePart2[0])) + 1
         elif MovePart1[1:] != MovePart2[1:]:
@@ -271,15 +307,17 @@ def SearchForLongestMoves():
             longestMoves.append(i)
     return longestMoves
 
+
 def ProcessHint(Move):
-    '''Provides a hint of the longest move possible'''
+    """Provides a hint of the longest move possible"""
     if Move == "H":
         print(f"Hint: Consider {random.choice(SearchForLongestMoves())}")
         return True
     return False
 
+
 def ProcessUndo(Move):
-    '''Undoes the last move of the player'''
+    """Undoes the last move of the player"""
     if Move == "U":
         if len(Last2MovesHistory):
             if Last2MovesHistory[0] == "Letter Move":
@@ -291,26 +329,29 @@ def ProcessUndo(Move):
                 Last2MovesHistory.pop(0)
                 return True
     return False
-        
+
+
 def ClearMoveHistory():
-    '''Deletes the first item of the move history'''
+    """Deletes the first item of the move history"""
     if len(Last2MovesHistory) > 1:
         Last2MovesHistory.pop(0)
 
+
 def LogMove(Move):
-    '''Logs the move in the reference form'''
+    """Logs the move in the reference form"""
     ClearMoveHistory()
     if len(Last2MovesHistory) == 0 and GameMode == "Multi Player":
         Last2MovesHistory.append("Start")
     if len(Move) == 1:
         Last2MovesHistory.append("Letter Move")
     else:
-        if Move[:(len(Move)//2)]== Move[(len(Move)//2+1):]:
-            Move = Move[:(len(Move)//2)]
+        if Move[: (len(Move) // 2)] == Move[(len(Move) // 2 + 1) :]:
+            Move = Move[: (len(Move) // 2)]
         Last2MovesHistory.append(Move)
 
+
 def Restore(Move):
-    '''Restores the tiles based on the undo move'''
+    """Restores the tiles based on the undo move"""
     FirstRef, SecondRef = ProcessCoordinates(Move)
     StartCoords = ConvertRefToCoords(FirstRef)
     EndCoords = ConvertRefToCoords(SecondRef)
@@ -326,14 +367,15 @@ def Restore(Move):
             for Cell in range(StartCoords[0], EndCoords[0] + 1):
                 Board[Cell][StartCoords[1]] = TILE
     else:
-        for Cell in range(EndCoords[1]-StartCoords[1]+1):
+        for Cell in range(EndCoords[1] - StartCoords[1] + 1):
             if StartCoords[0] < EndCoords[0]:
-                Board[StartCoords[0]+Cell][StartCoords[1]+Cell] = TILE
+                Board[StartCoords[0] + Cell][StartCoords[1] + Cell] = TILE
             else:
-                Board[StartCoords[0]-Cell][StartCoords[1]+Cell] = TILE
+                Board[StartCoords[0] - Cell][StartCoords[1] + Cell] = TILE
+
 
 def ProcessSave(Move, NextPlayer, TestGame):
-    '''Saves the game's data into the cache file'''
+    """Saves the game's data into the cache file"""
     global Player1Wins, Player2Wins, PlayerAgainstComputerWins, ComputerWins, Width, Height, Board, Last2MovesHistory, GameMode
     if TestGame:
         print("\033[31mCannot save a test game!\033[0m")
@@ -344,7 +386,9 @@ def ProcessSave(Move, NextPlayer, TestGame):
             file.write(f"Players Wins: {Player1Wins}:{Player2Wins}\n")
 
             # Player against Computer scores
-            file.write(f"Player against Computer wins: {PlayerAgainstComputerWins}:{ComputerWins}\n")
+            file.write(
+                f"Player against Computer wins: {PlayerAgainstComputerWins}:{ComputerWins}\n"
+            )
 
             # Size of the Board
             file.write(f"Size of the Board: {Width}x{Height}\n")
@@ -360,51 +404,54 @@ def ProcessSave(Move, NextPlayer, TestGame):
 
             # State of the Board
             for Row in range(len(Board)):
-                if Row < len(Board)-1:
-                    file.write(",".join(Board[Row])+"\n")
+                if Row < len(Board) - 1:
+                    file.write(",".join(Board[Row]) + "\n")
                 else:
                     file.write(",".join(Board[Row]))
         return True
     else:
         return False
-    
+
+
 def LoadGame():
-    '''Loads the game's data from a cache file'''
+    """Loads the game's data from a cache file"""
     global Player1Wins, Player2Wins, PlayerAgainstComputerWins, ComputerWins, Width, Height, Board, Last2MovesHistory, GameMode, PlayersTurnAfterLoadingGame
     try:
         with open("cache.txt", "r") as file:
             # Obtain Players scores
             Scores = file.readline()
-            Scores = Scores[Scores.index(":")+2:]
+            Scores = Scores[Scores.index(":") + 2 :]
             MainIndex = Scores.index(":")
             Player1Wins = int(Scores[:MainIndex])
-            Player2Wins = int(Scores[MainIndex+1:Scores.index("\n")])
+            Player2Wins = int(Scores[MainIndex + 1 : Scores.index("\n")])
 
             # # Obtain Player and Computer scores
             Scores = file.readline()
-            Scores = Scores[Scores.index(":")+2:]
+            Scores = Scores[Scores.index(":") + 2 :]
             MainIndex = Scores.index(":")
             PlayerAgainstComputerWins = int(Scores[:MainIndex])
-            ComputerWins = int(Scores[MainIndex+1:Scores.index("\n")])
+            ComputerWins = int(Scores[MainIndex + 1 : Scores.index("\n")])
 
             # Obtain size of the Board
             Size = file.readline()
-            Size = Size[Size.index(":")+2:]
+            Size = Size[Size.index(":") + 2 :]
             MainIndex = Size.index("x")
             Width = int(Size[:MainIndex])
-            Height = int(Size[MainIndex+1:Size.index("\n")])
+            Height = int(Size[MainIndex + 1 : Size.index("\n")])
 
             # Obtain Game mode
             line = file.readline()
-            GameMode = line[line.index(":")+2:line.index("\n")]
+            GameMode = line[line.index(":") + 2 : line.index("\n")]
 
             # Obtain Players turn
             line = file.readline()
-            PlayersTurnAfterLoadingGame = int(line[line.index(":")+2:line.index("\n")])
+            PlayersTurnAfterLoadingGame = int(
+                line[line.index(":") + 2 : line.index("\n")]
+            )
 
             # Obtain last 2 moves history
             line = file.readline()
-            line = line[line.index(":")+2:line.index("\n")]
+            line = line[line.index(":") + 2 : line.index("\n")]
             if line != "":
                 Last2MovesHistory = line.split(",")
             else:
@@ -413,25 +460,27 @@ def LoadGame():
             # Obtain the Board
             for row in range(Height):
                 line = file.readline()
-                if row < Height-1:
-                    line = line[:line.index("\n")]
+                if row < Height - 1:
+                    line = line[: line.index("\n")]
                 Board.append(line.split(","))
             print("\033[32mThe game has been successfully loaded!\033[0m")
         os.remove("cache.txt")
         return True
     except:
-         print(f"\033[31mCouldn't load the Game!\033[0m")
-         return False
-    
+        print(f"\033[31mCouldn't load the Game!\033[0m")
+        return False
+
+
 def ProcessQuit(Move):
-    '''Processes the quit from the game'''
+    """Processes the quit from the game"""
     if Move == "Q":
         return True
     else:
         return False
-    
+
+
 def ProcessHelp(Move):
-    '''Provides help with letter moves that can be made'''
+    """Provides help with letter moves that can be made"""
     if Move == "help":
         print("You can undo your last move by using U")
         time.sleep(0.001)
@@ -444,8 +493,9 @@ def ProcessHelp(Move):
     else:
         return False
 
+
 def ProcessSameLetterMove(StartCoords, EndCoords, tilesLeft):
-    '''Processes move on the same column'''
+    """Processes move on the same column"""
     ToRemove = EndCoords[0] - StartCoords[0] + 1
     for Cell in range(StartCoords[0], EndCoords[0] + 1):
         if Board[Cell][StartCoords[1]] == TILE:
@@ -460,8 +510,9 @@ def ProcessSameLetterMove(StartCoords, EndCoords, tilesLeft):
         return "Empty tile on the way"
     return "Correct move"
 
+
 def ProcessDifferentLetterMove(StartCoords, EndCoords, tilesLeft, MoveType):
-    '''Processes move on the same row or a diagonal move'''
+    """Processes move on the same row or a diagonal move"""
     if MoveType == "Straight":
         ToRemove = EndCoords[1] - StartCoords[1] + 1
         for Cell in range(StartCoords[1], EndCoords[1] + 1):
@@ -477,29 +528,30 @@ def ProcessDifferentLetterMove(StartCoords, EndCoords, tilesLeft, MoveType):
             return "Empty tile on the way"
     else:
         ToRemove = EndCoords[1] - StartCoords[1] + 1
-        for Cell in range(EndCoords[1]-StartCoords[1]+1):
+        for Cell in range(EndCoords[1] - StartCoords[1] + 1):
             if StartCoords[0] < EndCoords[0]:
-                if Board[StartCoords[0]+Cell][StartCoords[1]+Cell] == TILE:
+                if Board[StartCoords[0] + Cell][StartCoords[1] + Cell] == TILE:
                     ToRemove -= 1
                     tilesLeft -= 1
             else:
-                if Board[StartCoords[0]-Cell][StartCoords[1]+Cell] == TILE:
+                if Board[StartCoords[0] - Cell][StartCoords[1] + Cell] == TILE:
                     ToRemove -= 1
                     tilesLeft -= 1
         if ToRemove == 0:
             if tilesLeft < 1:
                 return "Not enough tiles"
-            for Cell in range(EndCoords[1]-StartCoords[1]+1):
+            for Cell in range(EndCoords[1] - StartCoords[1] + 1):
                 if StartCoords[0] < EndCoords[0]:
-                    Board[StartCoords[0]+Cell][StartCoords[1]+Cell] = NO_TILE
+                    Board[StartCoords[0] + Cell][StartCoords[1] + Cell] = NO_TILE
                 else:
-                    Board[StartCoords[0]-Cell][StartCoords[1]+Cell] = NO_TILE
+                    Board[StartCoords[0] - Cell][StartCoords[1] + Cell] = NO_TILE
         else:
             return "Empty tile on the way"
     return "Correct move"
 
+
 def ProcessUtilMove(Move, NextPlayer, TestGame):
-    '''Processes single letter moves involving maintaining game process'''
+    """Processes single letter moves involving maintaining game process"""
     if ProcessHelp(Move):
         return "Help"
     if ProcessHint(Move):
@@ -508,12 +560,13 @@ def ProcessUtilMove(Move, NextPlayer, TestGame):
         return "Correct move"
     if ProcessQuit(Move):
         return "Quited Game"
-    if  ProcessSave(Move, NextPlayer, TestGame):
+    if ProcessSave(Move, NextPlayer, TestGame):
         return "Saved Game"
     return "Not single letter"
 
-def ProcessMove(Move, NextPlayer = 0, TestGame = False):
-    '''Processes the move with either reference or letter and returns a key string'''
+
+def ProcessMove(Move, NextPlayer=0, TestGame=False):
+    """Processes the move with either reference or letter and returns a key string"""
     global Board
     try:
         MoveType = ProcessUtilMove(Move, NextPlayer, TestGame)
@@ -536,7 +589,9 @@ def ProcessMove(Move, NextPlayer = 0, TestGame = False):
             if MoveOutcome != "Correct move":
                 return MoveOutcome
         else:
-            MoveOutcome = ProcessDifferentLetterMove(StartCoords, EndCoords, tilesLeft, MoveType)
+            MoveOutcome = ProcessDifferentLetterMove(
+                StartCoords, EndCoords, tilesLeft, MoveType
+            )
             if MoveOutcome != "Correct move":
                 return MoveOutcome
         return "Correct move"
@@ -545,16 +600,18 @@ def ProcessMove(Move, NextPlayer = 0, TestGame = False):
     except:
         return "Incorrect format"
 
+
 def CheckGameOver():
-    '''Checks whether there is only 1 tile left on the map'''
+    """Checks whether there is only 1 tile left on the map"""
     Remaining = CountTilesLeft()
     if Remaining == 1:
         return True
     else:
         return False
 
+
 def ProcessGameOver(NextPlayer):
-    '''Provides a message for a winner'''
+    """Provides a message for a winner"""
     global Player1Wins, Player2Wins, PlayerAgainstComputerWins, ComputerWins, Last2MovesHistory
     GameOver = True
     if GameMode == "Multi Player":
@@ -578,25 +635,29 @@ def ProcessGameOver(NextPlayer):
     input()
     return GameOver
 
+
 def ProcessComputerMove(NextPlayer):
-    '''Makes a random move out of allowed ones'''
+    """Makes a random move out of allowed ones"""
     randomizer = random.uniform(1, 10)
     if randomizer < 3:
         Move = random.choice(SearchForLongestMoves())
     else:
         Move = random.choice(SearchForAllowedMoves()[0])
     MiddleIndex = Move.index("-")
-    if Move[:MiddleIndex] == Move[MiddleIndex + 1:]:
+    if Move[:MiddleIndex] == Move[MiddleIndex + 1 :]:
         Move = Move[:MiddleIndex]
     IsValid = ProcessMove(Move, NextPlayer)
     time.sleep(1)
     print(f"The computer made move: {Move}")
     return IsValid
 
+
 def PlayGame(LoadedGame, TestGame):
-    '''Main cycle for the game with output based on processed move keys and checking whether the game has finished'''
+    """Main cycle for the game with output based on processed move keys and checking whether the game has finished"""
     global Player1Wins, Player2Wins, PlayerAgainstComputerWins, ComputerWins, Width, Height, Last2MovesHistory, GameMode
-    print(f"Valid moves are within the range A1-{ConvertCoordsToRef(Height - 1, Width - 1)}")
+    print(
+        f"Valid moves are within the range A1-{ConvertCoordsToRef(Height - 1, Width - 1)}"
+    )
     GameOver = False
     try:
         if not LoadedGame:
@@ -618,15 +679,23 @@ def PlayGame(LoadedGame, TestGame):
                     IsValid = ProcessMove(Move, NextPlayer, TestGame)
                     match IsValid:
                         case "Outside Index":
-                            print("\033[31mIncorrect index of the tile was enterred!\033[0m")
+                            print(
+                                "\033[31mIncorrect index of the tile was enterred!\033[0m"
+                            )
                         case "Incorrect format":
-                            print("\033[31mThe move must be entered in the form, similar to A1-D1!\033[0m")
+                            print(
+                                "\033[31mThe move must be entered in the form, similar to A1-D1!\033[0m"
+                            )
                         case "Double row":
-                            print("\033[31mThe player can only make a move across a single straight or ideal diagonal line!\033[0m")
+                            print(
+                                "\033[31mThe player can only make a move across a single straight or ideal diagonal line!\033[0m"
+                            )
                         case "Empty tile on the way":
                             print("\033[31mThere are empty tiles on the way!\033[0m")
                         case "Not enough tiles":
-                            print("\033[31mCannot make a move that removes all tiles left from the board!\033[0m")
+                            print(
+                                "\033[31mCannot make a move that removes all tiles left from the board!\033[0m"
+                            )
                         case "Correct move":
                             if GameMode == "Multi Player":
                                 LogMove(Move)
@@ -634,7 +703,9 @@ def PlayGame(LoadedGame, TestGame):
                                 Last2MovesHistory = []
                                 LogMove(Move)
                         case "Saved Game":
-                            print("\033[32mThe game has been successfully saved!\033[0m")
+                            print(
+                                "\033[32mThe game has been successfully saved!\033[0m"
+                            )
                             return
                         case "Hint", "Help":
                             continue
@@ -653,8 +724,9 @@ def PlayGame(LoadedGame, TestGame):
     except:
         print("\033[31mCan only enter 1 or 2 for player order!\033[0m")
 
+
 def Menu(Playing):
-    '''Manages menu and the functions it goes to based on the choice'''
+    """Manages menu and the functions it goes to based on the choice"""
     global RandomOption, GameMode
     while Playing:
         ExitMenu = False
@@ -677,8 +749,8 @@ def Menu(Playing):
                     case 4:
                         ExitMenu = True
                         if GameMode == "Single Player":
-                                GameMode = "Multi Player"
-                                print("Game mode is changed to Multi Player")
+                            GameMode = "Multi Player"
+                            print("Game mode is changed to Multi Player")
                         LoadTestBoard()
                         TestGame = True
                     case 5:
@@ -699,12 +771,14 @@ def Menu(Playing):
         if Playing:
             PlayGame(LoadedGame, TestGame)
 
+
 def Main():
-    '''Main starting function'''
+    """Main starting function"""
     Playing = True
     Menu(Playing)
     print("Press enter to continue")
     input()
+
 
 if __name__ == "__main__":
     Main()
